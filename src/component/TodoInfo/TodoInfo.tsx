@@ -1,32 +1,28 @@
-import React from 'react';
-import classNames from 'classnames';
 import { Todo } from '../../types/Todo';
 
-interface Props {
+interface TodoInfoProps {
   todo: Todo;
   toggleCompletion: (id: number) => void;
   deleteTodo: (id: number) => void;
+  onEdit: (todo: Todo) => void;
 }
 
-export const TodoInfo: React.FC<Props> = ({
+export const TodoInfo = ({
   todo,
   toggleCompletion,
   deleteTodo,
-}) => {
+  onEdit,
+}: TodoInfoProps) => {
   return (
-    <article
-      className={classNames(
-        'flex justify-between w-full p-2 my-3 border border-black rounded-lg bg-antiquewhite',
-        {
-          'TodoInfo--completed': todo.completed,
-        },
-      )}
-    >
-      <div className="task">
-        <h2 className="my-1 text-inherit font-bold">
-          {todo.title}
-        </h2>
-        <h2 className="my-1 text-inherit">{todo.description}</h2>
+    <article className="flex justify-between w-full p-2 my-3 border border-black rounded-lg bg-antiquewhite">
+      <div
+        className={`todo-content ${todo.completed ? 'completed' : ''} flex-1 cursor-pointer`}
+        onDoubleClick={() => onEdit(todo)}
+      >
+        <h3 className="todo-title my-1 text-lg font-bold">{todo.title}</h3>
+        <p className="todo-description my-1 text-sm text-gray-600">
+          {todo.description}
+        </p>
       </div>
 
       <div className="flex flex-col gap-1 min-w-150">

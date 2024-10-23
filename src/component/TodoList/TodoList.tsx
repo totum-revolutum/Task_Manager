@@ -1,19 +1,24 @@
-import React from 'react';
-import { TodoInfo } from '../TodoInfo/TodoInfo';
-import { Todo } from '../../types/Todo';
+import { Todo } from "../../types/Todo";
+import { TodoInfo } from "../TodoInfo/TodoInfo";
 
-
-interface Props {
+interface TodoListProps {
   todos: Todo[];
   toggleCompletion: (id: number) => void;
   deleteTodo: (id: number) => void;
+  onEdit: (todo: Todo) => void;
 }
 
-export const TodoList: React.FC<Props> = ({ todos, toggleCompletion, deleteTodo }) => {
+export const TodoList = ({ todos, toggleCompletion, deleteTodo, onEdit }: TodoListProps) => {
   return (
-    <section className="TodoList">
-      {todos.map(todo => (
-        <TodoInfo todo={todo} key={todo.id} toggleCompletion={toggleCompletion} deleteTodo={deleteTodo}/>
+    <section className="todo-list">
+      {todos.map((todo) => (
+        <TodoInfo
+          key={todo.id}
+          todo={todo}
+          toggleCompletion={toggleCompletion}
+          deleteTodo={deleteTodo}
+          onEdit={onEdit}
+        />
       ))}
     </section>
   );

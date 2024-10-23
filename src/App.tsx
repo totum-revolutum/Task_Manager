@@ -1,17 +1,20 @@
-import { useEffect, useState } from "react";
-import { TodoList } from "./component/TodoList/TodoList";
+import { useState } from "react";
 import { Todo } from "./types/Todo";
+import { TodoList } from "./component/TodoList/TodoList";
+import { Modal } from "./component/Modal/Modal";
+import { ErrorMessage } from "./types/ErrorMessage";
 
 export const App = () => {
   const [todoList, setTodoList] = useState<Todo[]>(() => {
-    // Отримуємо дані з Local Storage або повертаємо порожній масив
     const storedTodos = localStorage.getItem('todoList');
     return storedTodos ? JSON.parse(storedTodos) : [];
   });
+  
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [titleValue, setTitleValue] = useState('');
   const [titleError, setTitleError] = useState('');
-
   const [descriptionValue, setDescriptionValue] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
 
@@ -23,62 +26,87 @@ export const App = () => {
     return maxId + 1;
   };
 
-  function handleInputChange(
+  const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<string>>,
     setError: React.Dispatch<React.SetStateAction<string>>
-  ) {
+  ) => {
     setter(e.target.value);
     setError('');
-  }
+  };
 
   const reset = () => {
     setTitleValue('');
     setDescriptionValue('');
   };
 
-  function addTodoToList(todo: Todo) {
+  const addTodoToList = (todo: Todo) => {
     const updatedList = [todo, ...todoList];
     setTodoList(updatedList);
-    localStorage.setItem('todoList', JSON.stringify(updatedList)); // Зберігаємо в Local Storage
-  }
+    localStorage.setItem('todoList', JSON.stringify(updatedList));
+  };
 
-  function handleSubmit(e: React.ChangeEvent<HTMLFormElement>) {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!trimedTitleValue) {
-      setTitleError('Please enter a title');
+      setTitleError(ErrorMessage.TITLE_ERROR);
     }
 
     if (!trimedDescriptionValue) {
-      setDescriptionError('Please enter a description');
+      setDescriptionError(ErrorMessage.DESCRIPTION_ERROR);
     }
 
     if (!trimedTitleValue || !trimedDescriptionValue) {
       return;
     }
 
-    addTodoToList({
-      id: getTodoListId(todoList),
-      title: trimedTitleValue,
-      description: trimedDescriptionValue, 
-      completed: false,
-    });
+    if (editingTodo) {
+      setTodoList(prevList =>
+        prevList.map(todo =>
+          todo.id === editingTodo.id
+            ? { ...todo, title: trimedTitleValue, description: trimedDescriptionValue }
+            : todo
+        )
+      );
+
+      setEditingTodo(null);
+    } else {
+      addTodoToList({
+        id: getTodoListId(todoList),
+        title: trimedTitleValue,
+        description: trimedDescriptionValue,
+        completed: false,
+      });
+    }
     reset();
-  }
+  };
 
   const toggleCompletion = (id: number) => {
     const updatedList = todoList.map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     );
     setTodoList(updatedList);
-    localStorage.setItem('todoList', JSON.stringify(updatedList)); // Оновлюємо Local Storage
+    localStorage.setItem('todoList', JSON.stringify(updatedList));
   };
 
   const deleteTodo = (id: number) => {
     const updatedList = todoList.filter(todo => todo.id !== id);
     setTodoList(updatedList);
-    localStorage.setItem('todoList', JSON.stringify(updatedList)); // Оновлюємо Local Storage
+    localStorage.setItem('todoList', JSON.stringify(updatedList));
+  };
+
+  const handleEdit = (todo: Todo) => {
+    setEditingTodo(todo);
+    setTitleValue(todo.title);
+    setDescriptionValue(todo.description);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingTodo(null);
+    reset();
   };
 
   return (
@@ -118,11 +146,22 @@ export const App = () => {
         </div>
 
         <button type="submit" className="cursor-pointer bg-[#c0e5fb] rounded-md my-2.5 py-1.5 w-full">
-          Add
+          {editingTodo ? 'Save Changes' : 'Add'}
         </button>
       </form>
 
-      <TodoList todos={todoList} toggleCompletion={toggleCompletion} deleteTodo={deleteTodo}/>
+      <TodoList todos={todoList} toggleCompletion={toggleCompletion} deleteTodo={deleteTodo} onEdit={handleEdit} />
+
+      {isModalOpen && (
+        <Modal
+          title={titleValue}
+          description={descriptionValue}
+          onSave={handleSubmit}
+          onClose={closeModal}
+          onTitleChange={(e) => handleInputChange(e, setTitleValue, setTitleError)}
+          onDescriptionChange={(e) => handleInputChange(e, setDescriptionValue, setDescriptionError)}
+        />
+      )}
     </div>
   );
 };
